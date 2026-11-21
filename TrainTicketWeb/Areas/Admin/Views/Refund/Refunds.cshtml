@@ -1,0 +1,50 @@
+@model List<TrainTicketWeb.ViewModels.RefundDetailViewModel>
+@{
+    ViewData["Title"] = "Xử lý hoàn tiền";
+}
+
+<div class="card">
+    <h2>Yêu cầu hủy vé / hoàn tiền</h2>
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info">Không có yêu cầu hoàn tiền nào.</div>
+    }
+    else
+    {
+        <table class="table">
+            <thead><tr><th>Vé</th><th>Hành khách</th><th>Chuyến</th><th>Phí hủy</th><th>Số tiền hoàn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody>
+            @foreach (var r in Model)
+            {
+                var cls = r.Refund.Status switch
+                {
+                    "requested" => "badge-warning",
+                    "completed" => "badge-success",
+                    "rejected" => "badge-accent",
+                    "approved" => "badge-primary",
+                    _ => "badge-muted"
+                };
+                <tr>
+                    <td><strong>@r.TicketCode</strong></td>
+                    <td>@r.PassengerName</td>
+                    <td>@r.TrainCode · @r.FromStationName → @r.ToStationName</td>
+                    <td class="text-accent">@r.Refund.RefundFee.ToString("N0") ₫</td>
+                    <td class="price">@r.Refund.RefundAmount.ToString("N0") ₫</td>
+                    <td><span class="badge @cls">@r.Refund.Status</span></td>
+                    <td>
+                        @if (r.Refund.Status == "requested")
+                        {
+                            <form asp-action="ProcessRefund" asp-area="Admin" asp-controller="Refund" method="post" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="refundId" value="@r.Refund.RefundId" />
+                                <button type="submit" name="decision" value="approve" class="btn btn-success btn-sm">Duyệt</button>
+                                <button type="submit" name="decision" value="reject" class="btn btn-accent btn-sm">Từ chối</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

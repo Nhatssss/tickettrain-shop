@@ -1,0 +1,208 @@
+@model TrainTicketWeb.Services.TripDetailHoanViewModel
+@{
+    ViewData["Title"] = "Chi tiết chuyến";
+    Layout = "_AdminLayout";
+    var trip = Model.Trip;
+    var statusLabel = trip.IsCancelled ? "Đã hủy" : (trip.Status == "scheduled" ? "Đang bán" : trip.Status);
+    var statusColor = trip.IsCancelled ? "#E53935" : (trip.IsDelayed ? "#FB8C00" : "#2E7D32");
+}
+
+<div class="page-head">
+    <div>
+        <h1>Chuyến @trip.TrainCode · @trip.DepartureDate.ToString("dd/MM/yyyy")</h1>
+        <p class="page-sub">
+            @trip.RouteName
+            <span class="badge" style="background:@statusColor;color:#fff;margin-left:8px;">@statusLabel</span>
+            @if (trip.IsDelayed)
+            {
+                <span class="badge" style="background:#FB8C00;color:#fff;margin-left:6px;">Hoãn @trip.DelayMinutes phút</span>
+            }
+        </p>
+    </div>
+    <a href="@Url.Action("Trips", "QuanTri")" class="btn btn-light">← Danh sách chuyến</a>
+</div>
+
+@if (trip.IsCancelled && !string.IsNullOrWhiteSpace(trip.CancelReason))
+{
+    <div class="alert alert-error">
+        <strong>Lý do hủy:</strong> @trip.CancelReason
+    </div>
+}
+
+<div class="stat-row">
+    <div class="stat-card">
+        <span class="stat-label">Vé đã bán</span>
+        <span class="stat-value">@Model.SoldTickets</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Doanh thu chuyến</span>
+        <span class="stat-value price">@Model.Revenue.ToString("N0") ₫</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Đã hoàn</span>
+        <span class="stat-value" style="color:#E53935;">@Model.Refunded.ToString("N0") ₫</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Khách / thông báo</span>
+        <span class="stat-value">@Model.CustomerCount <span style="font-size:.8rem;color:#8a94a3;">/ @Model.NotifiedCount</span></span>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;" class="trip-ops">
+    <div class="card">
+        <h3>Hoãn chuyến</h3>
+        <p style="color:#5b6472;font-size:.9rem;">
+            Giờ khởi hành và giờ tới các ga được dời thêm số phút bên dưới.
+            Hệ thống gửi thông báo ngay lập tức tới trình duyệt của mọi khách đã mua vé.
+        </p>
+        <form asp-action="DelayTrip" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="tripId" value="@trip.TripId" />
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Số phút hoãn</label>
+                    <select name="minutes" class="form-control" required>
+                        <option value="10">10 phút</option>
+                        <option value="15">15 phút</option>
+                        <option value="20">20 phút</option>
+                        <option value="30" selected>30 phút</option>
+                        <option value="45">45 phút</option>
+                        <option value="60">60 phút</option>
+                        <option value="90">90 phút</option>
+                        <option value="120">120 phút</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Lời nhắn gửi khách (không bắt buộc)</label>
+                <input name="note" class="form-control" maxlength="300"
+                       placeholder="VD: Sự cố đường ray tại ga Vinh, tàu khởi hành muộn." />
+            </div>
+            <button type="submit" class="btn btn-primary" @(trip.IsCancelled ? "disabled" : "")>Hoãn &amp; gửi thông báo</button>
+            @if (trip.IsDelayed)
+            {
+                <span style="color:#FB8C00;font-size:.9rem;margin-left:8px;">Đang hoãn @trip.DelayMinutes phút</span>
+            }
+        </form>
+        @if (trip.IsDelayed)
+        {
+            <form asp-action="ClearDelay" method="post" style="margin-top:10px;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tripId" value="@trip.TripId" />
+                <button type="submit" class="btn btn-light btn-sm">Bỏ trạng thái hoãn</button>
+            </form>
+        }
+    </div>
+
+    <div class="card">
+        <h3>Hủy chuyến</h3>
+        <p style="color:#5b6472;font-size:.9rem;">
+            Hệ thống hoàn <strong>100%</strong> tiền vé của mọi vé đã bán, ghi nhận vào sổ hoàn tiền,
+            tặng mỗi khách mã <strong>GIFF555</strong> (giảm 10%) và gửi thông báo tức thời.
+            Hành động này không thể hoàn tác.
+        </p>
+        @if (trip.IsCancelled)
+        {
+            <div class="alert alert-error" style="margin:0;">Chuyến này đã bị hủy.</div>
+        }
+        else
+        {
+            <form asp-action="CancelTrip" method="post"
+                  onsubmit="return confirm('Hủy chuyến @trip.TrainCode @trip.DepartureDate.ToString("dd/MM/yyyy") và hoàn 100% cho @Model.SoldTickets vé?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tripId" value="@trip.TripId" />
+                <div class="form-group">
+                    <label>Lý do hủy <span style="color:#E53935;">*</span></label>
+                    <input name="reason" class="form-control" maxlength="300" required
+                           placeholder="VD: Bão lớn, sạt lở đường sắt đoạn Đà Nẵng – Huế." />
+                </div>
+                <button type="submit" class="btn" style="background:#E53935;color:#fff;">Hủy chuyến &amp; hoàn tiền</button>
+            </form>
+        }
+        @if (Model.SoldTickets == 0 && !trip.IsCancelled)
+        {
+            <form asp-action="DeleteTrip" method="post" style="margin-top:12px;"
+                  onsubmit="return confirm('Xóa hẳn chuyến này khỏi hệ thống?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="tripId" value="@trip.TripId" />
+                <button type="submit" class="btn btn-light btn-sm">Xóa chuyến (chưa bán vé)</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="card mt-3">
+    <h3>Lịch trình các ga</h3>
+    <table class="table">
+        <thead><tr><th>#</th><th>Ga</th><th>Giờ đến</th><th>Giờ đi</th></tr></thead>
+        <tbody>
+        @foreach (var s in Model.Stops)
+        {
+            <tr>
+                <td>@s.StopOrder</td>
+                <td>@s.StationName</td>
+                <td>@(s.ArrivalTime?.ToString("HH:mm dd/MM") ?? "—")</td>
+                <td>@(s.DepartureTime?.ToString("HH:mm dd/MM") ?? "—")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="card mt-3">
+    <h3>Vé trên chuyến (@Model.Tickets.Count)</h3>
+    @if (Model.Tickets.Count == 0)
+    {
+        <p style="color:#8a94a3;">Chưa có vé nào được đặt cho chuyến này.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+            <tr><th>Mã vé</th><th>Hành khách</th><th>Toa / Chỗ</th><th>Đơn</th><th>Khách</th><th>Giá</th><th>Trạng thái</th></tr>
+            </thead>
+            <tbody>
+            @foreach (var t in Model.Tickets)
+            {
+                <tr>
+                    <td style="font-family:monospace;font-size:.85rem;">@t.TicketCode</td>
+                    <td>@t.PassengerName
+                        @if (!string.IsNullOrWhiteSpace(t.PassengerTypeName))
+                        {
+                            <div style="color:#8a94a3;font-size:.8rem;">@t.PassengerTypeName</div>
+                        }
+                    </td>
+                    <td>Toa @t.CoachNumber · @t.SeatNumber</td>
+                    <td style="font-size:.85rem;">@t.BookingCode</td>
+                    <td style="font-size:.85rem;">@t.CustomerEmail</td>
+                    <td class="price">@t.FinalPrice.ToString("N0") ₫</td>
+                    <td>
+                        @if (t.Status == "paid")
+                        {
+                            <span class="badge badge-success">Đã thanh toán</span>
+                        }
+                        else if (t.Status == "cancelled")
+                        {
+                            <span class="badge badge-muted">Đã hủy</span>
+                        }
+                        else
+                        {
+                            <span class="badge" style="background:#FB8C00;color:#fff;">Đang giữ</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+@if (trip.IsDelayed || trip.IsCancelled)
+{
+    <div class="card mt-3">
+        <h3>Khách đang xem trực tiếp</h3>
+        <p style="color:#5b6472;font-size:.9rem;margin-bottom:0;">
+            Khách đang mở trang vé sẽ nhận cảnh báo qua kênh real-time; khách không online vẫn thấy thông báo ở chuông khi quay lại.
+        </p>
+    </div>
+}

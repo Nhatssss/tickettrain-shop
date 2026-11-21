@@ -1,0 +1,7 @@
+@model TrainTicketWeb.ViewModels.StationMenuViewModel
+<div class="station-menu">
+    @foreach (var s in Model.Stations)
+    {
+        <span class="station-chip @(s.StationId == Model.CurrentStationId ? "active" : "")">@s.StationName</span>
+    }
+</div>

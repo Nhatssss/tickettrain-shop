@@ -1,0 +1,11 @@
+﻿@model TrainTicketWeb.ViewModels.BookingDetailViewModel
+@{
+    ViewData["Title"] = "Đặt vé thành công";
+}
+
+<div class="card text-center">
+    <h2 class="text-success">✓ Đặt vé thành công</h2>
+    <p>Mã đơn: <strong>@Model.Booking.BookingCode</strong></p>
+    <a href="@Url.Action("Ticket", "Booking", new { ticketId = Model.Tickets.FirstOrDefault()?.Ticket.TicketId })" class="btn btn-primary">Xem vé điện tử</a>
+    <a href="@Url.Action("MyBookings", "Booking")" class="btn btn-outline">Về lịch sử vé</a>
+</div>

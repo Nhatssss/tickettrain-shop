@@ -1,0 +1,52 @@
+@model List<TrainTicketWeb.Models.Station>
+@{
+    ViewData["Title"] = "Quản lý ga tàu";
+}
+
+<div class="card">
+    <h2>Thêm / sửa ga tàu</h2>
+    <form asp-action="SaveStation" asp-controller="QuanTri" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="0" />
+        <div class="form-row">
+            <div class="form-group"><label>Mã ga</label><input type="text" name="station_code" class="form-control" required placeholder="VD: HAN" /></div>
+            <div class="form-group"><label>Tên ga</label><input type="text" name="station_name" class="form-control" required /></div>
+            <div class="form-group"><label>Tỉnh/Thành</label><input type="text" name="province" class="form-control" /></div>
+            <div class="form-group"><label>Hoạt động</label><select name="is_active" class="form-control"><option value="true">Có</option><option value="false">Ngừng</option></select></div>
+        </div>
+        <button type="submit" class="btn btn-primary">Thêm ga</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Danh sách ga</h2>
+    <table class="table">
+        <thead><tr><th>Mã</th><th>Tên ga</th><th>Tỉnh/Thành</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody>
+        @foreach (var s in Model)
+        {
+            <tr>
+                <td>@s.StationCode</td>
+                <td>@s.StationName</td>
+                <td>@s.Province</td>
+                <td><span class="badge @(s.IsActive ? "badge-success" : "badge-muted")">@(s.IsActive ? "Hoạt động" : "Ngừng")</span></td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="fillStation(@s.StationId, '@s.StationCode', '@s.StationName', '@s.Province', @s.IsActive.ToString().ToLower())">Sửa</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function fillStation(id, code, name, province, active) {
+        const f = document.forms[0];
+        f.id.value = id;
+        f.station_code.value = code;
+        f.station_name.value = name;
+        f.province.value = province;
+        f.is_active.value = String(active);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>

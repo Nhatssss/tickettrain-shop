@@ -1,0 +1,47 @@
+@model TrainTicketWeb.ViewModels.BookingDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết đơn hàng";
+}
+
+<div class="card">
+    <h2>Đơn @Model.Booking.BookingCode</h2>
+    <p class="text-muted">
+        Khách: @Model.Booking.ContactEmail · Điện thoại: @Model.Booking.ContactPhone
+        · Ngày đặt: @Model.Booking.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+    </p>
+
+    <table class="table">
+        <thead><tr><th>Vé</th><th>Hành khách</th><th>Chuyến</th><th>Chỗ</th><th>Giá</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+        @foreach (var t in Model.Tickets)
+        {
+            <tr>
+                <td>@t.Ticket.TicketCode</td>
+                <td>@t.Ticket.PassengerName</td>
+                <td>@t.TrainCode · @t.FromStationName → @t.ToStationName</td>
+                <td>Toa @t.CoachNumber · Chỗ @t.SeatNumber</td>
+                <td>@t.Ticket.FinalPrice.ToString("N0") ₫</td>
+                <td>@t.Ticket.Status</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <h3>Thanh toán</h3>
+    <table class="table">
+        <thead><tr><th>Phương thức</th><th>Số tiền</th><th>Mã GD</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+        <tbody>
+        @foreach (var p in Model.Payments)
+        {
+            <tr>
+                <td>@p.Method</td>
+                <td>@p.Amount.ToString("N0") ₫</td>
+                <td>@p.TransactionRef</td>
+                <td>@p.Status</td>
+                <td>@(p.PaidAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <a href="@Url.Action("Bookings", "Booking", new { area = "Admin" })" class="btn btn-outline">Quay lại</a>
+</div>

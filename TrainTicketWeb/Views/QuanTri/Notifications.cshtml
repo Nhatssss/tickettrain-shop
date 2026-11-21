@@ -1,0 +1,61 @@
+@{
+    ViewData["Title"] = "Thông báo đã phát";
+    Layout = "_AdminLayout";
+    var rows = (System.Data.DataTable)ViewBag.Rows;
+}
+
+<div class="page-head">
+    <div>
+        <h1>Thông báo đã phát</h1>
+        <p class="page-sub">Toàn bộ thông báo hệ thống gửi cho khách (hoãn chuyến, hủy chuyến, tặng mã).</p>
+    </div>
+</div>
+
+<div class="card">
+    @if (rows.Rows.Count == 0)
+    {
+        <p style="color:#8a94a3;">Chưa có thông báo nào được phát.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead><tr><th>Thời điểm</th><th>Khách</th><th>Loại</th><th>Tiêu đề</th><th>Đã đọc</th></tr></thead>
+            <tbody>
+            @foreach (System.Data.DataRow r in rows.Rows)
+            {
+                var type = r["type"].ToString();
+                var label = type switch
+                {
+                    "trip_delayed" => "Hoãn chuyến",
+                    "trip_cancelled" => "Hủy chuyến",
+                    "refund" => "Hoàn tiền",
+                    "coupon" => "Ưu đãi",
+                    _ => "Hệ thống"
+                };
+                <tr>
+                    <td style="white-space:nowrap;font-size:.88rem;">@Convert.ToDateTime(r["created_at"]).ToString("HH:mm dd/MM/yyyy")</td>
+                    <td style="font-size:.88rem;">
+                        @(string.IsNullOrWhiteSpace(r["FullName"]?.ToString()) ? r["UserEmail"] : r["FullName"])
+                        <div style="color:#8a94a3;font-size:.8rem;">@r["UserEmail"]</div>
+                    </td>
+                    <td><span class="badge badge-primary">@label</span></td>
+                    <td>
+                        <strong>@r["title"]</strong>
+                        <div style="color:#5b6472;font-size:.85rem;">@r["body"]</div>
+                    </td>
+                    <td>
+                        @if (Convert.ToBoolean(r["is_read"]))
+                        {
+                            <span class="badge badge-muted">Đã đọc</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-warning">Chưa đọc</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

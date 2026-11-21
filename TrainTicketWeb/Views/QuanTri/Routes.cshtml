@@ -1,0 +1,48 @@
+@model List<TrainTicketWeb.Models.Route>
+@{
+    ViewData["Title"] = "Quản lý tuyến tàu";
+}
+
+<div class="card">
+    <h2>Danh sách tuyến</h2>
+    <table class="table">
+        <thead><tr><th>Tên tuyến</th><th>Ga đầu</th><th>Ga cuối</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td><strong>@r.RouteName</strong></td>
+                <td>@r.StartStationName</td>
+                <td>@r.EndStationName</td>
+                <td><a href="@Url.Action("RouteDetail", "QuanTri")" class="btn btn-primary btn-sm">Cấu hình ga trung gian</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Thêm tuyến mới</h2>
+    <form asp-action="SaveRoute" asp-controller="QuanTri" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="0" />
+        <div class="form-row">
+            <div class="form-group"><label>Tên tuyến</label><input type="text" name="route_name" class="form-control" required /></div>
+            <div class="form-group">
+                <label>Ga đầu</label>
+                <select name="start_station_id" class="form-control" required>
+                    @foreach (var s in ViewBag.Stations ?? new List<TrainTicketWeb.Models.Station>())
+                    { <option value="@s.StationId">@s.StationName</option> }
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Ga cuối</label>
+                <select name="end_station_id" class="form-control" required>
+                    @foreach (var s in ViewBag.Stations ?? new List<TrainTicketWeb.Models.Station>())
+                    { <option value="@s.StationId">@s.StationName</option> }
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Thêm tuyến</button>
+    </form>
+</div>

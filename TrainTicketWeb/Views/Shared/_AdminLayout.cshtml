@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản trị vé tàu</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <a href="@Url.Action("Index", "QuanTri")" class="brand">
+            <span class="logo">VT</span>
+            <span>Quản trị</span>
+        </a>
+        <div class="nav-links">
+            <a href="@Url.Action("Index", "Home")">Về trang khách</a>
+            @if (User.Identity.IsAuthenticated)
+            {
+                <a href="@Url.Action("Profile", "Account")">@User.Identity.Name</a>
+                <form asp-controller="Account" asp-action="Logout" asp-area="" method="post" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-accent btn-sm">Đăng xuất</button>
+                </form>
+            }
+        </div>
+    </nav>
+
+    <div class="admin-wrap">
+        <aside class="admin-side">
+            <div class="side-title">Danh mục</div>
+            <a href="@Url.Action("Index", "QuanTri")">Tổng quan</a>
+            <a href="@Url.Action("Stations", "QuanTri")">Ga tàu</a>
+            <a href="@Url.Action("Routes", "QuanTri")">Tuyến đường</a>
+            <a href="@Url.Action("Trains", "QuanTri")">Đoàn tàu</a>
+            <a href="@Url.Action("Trips", "QuanTri")">Chuyến tàu</a>
+
+            <div class="side-title">Bán vé</div>
+            <a href="@Url.Action("Fares", "QuanTri")">Bảng giá</a>
+            <a href="@Url.Action("PassengerTypes", "QuanTri")">Đối tượng khách</a>
+            <a href="@Url.Action("Coupons", "QuanTri")">Mã giảm giá</a>
+            <a href="@Url.Action("Bookings", "QuanTri")">Đơn hàng</a>
+            <a href="@Url.Action("Refunds", "QuanTri")">Hoàn tiền</a>
+
+            <div class="side-title">Tài chính</div>
+            <a href="@Url.Action("Finance", "QuanTri")">Quỹ &amp; khách hàng</a>
+            <a href="@Url.Action("Notifications", "QuanTri")">Thông báo đã phát</a>
+
+            <div class="side-title">Hệ thống</div>
+            <a href="@Url.Action("Users", "QuanTri")">Người dùng</a>
+        </aside>
+
+        <main class="admin-main">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error">@TempData["Error"]</div>
+            }
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">@TempData["Success"]</div>
+            }
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer">
+        Hệ thống bán vé tàu hỏa trực tuyến — Đồ án học tập
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

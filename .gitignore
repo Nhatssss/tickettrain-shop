@@ -1,0 +1,40 @@
+# ---- .NET build output ----
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+.vs/
+*.userprefs
+
+# ---- Deploy / publish output (khong dua len GitHub) ----
+deploy_somee/publish/
+deploy_somee/publish_x86/
+deploy_somee/_smoke/
+deploy_somee/_smoke_x86/
+deploy_somee/_zipsmoke/
+deploy_somee/*.zip
+*.pdb
+*.log
+
+# ---- Backup ----
+_backup_*/
+*.bak
+
+# ---- Node / npm ----
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# ---- OS / editor ----
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+
+# ---- Secrets & local config ----
+appsettings.Development.json
+appsettings.Local.json
+*.env
+.env
+.env.*
+secrets.json

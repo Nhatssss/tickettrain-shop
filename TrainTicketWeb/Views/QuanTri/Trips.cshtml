@@ -1,0 +1,84 @@
+@model List<TrainTicketWeb.Models.Trip>
+@{
+    ViewData["Title"] = "Quản lý chuyến tàu";
+    var trains = (List<TrainTicketWeb.Models.Train>)ViewBag.Trains;
+}
+
+<div class="card">
+    <h2>Tạo chuyến tàu</h2>
+    <form asp-action="CreateTrip" asp-controller="QuanTri" method="post">
+        @Html.AntiForgeryToken()
+        <div class="form-row">
+            <div class="form-group">
+                <label>Đoàn tàu</label>
+                <select name="trainId" class="form-control">
+                    @foreach (var t in trains)
+                    { <option value="@t.TrainId">@t.TrainCode — @t.RouteName</option> }
+                </select>
+            </div>
+            <div class="form-group"><label>Ngày khởi hành</label><input type="date" name="date" class="form-control" required /></div>
+            <div class="form-group"><label>Giờ xuất phát</label><input type="time" name="time" value="19:00" class="form-control" /></div>
+        </div>
+        <button type="submit" class="btn btn-primary">Tạo chuyến</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Tạo hàng loạt (khoảng ngày)</h2>
+    <form asp-action="CreateTripBatch" asp-controller="QuanTri" method="post">
+        @Html.AntiForgeryToken()
+        <div class="form-row">
+            <div class="form-group">
+                <label>Đoàn tàu</label>
+                <select name="trainId" class="form-control">
+                    @foreach (var t in trains)
+                    { <option value="@t.TrainId">@t.TrainCode — @t.RouteName</option> }
+                </select>
+            </div>
+            <div class="form-group"><label>Từ ngày</label><input type="date" name="fromDate" class="form-control" required /></div>
+            <div class="form-group"><label>Đến ngày</label><input type="date" name="toDate" class="form-control" required /></div>
+            <div class="form-group"><label>Giờ xuất phát</label><input type="time" name="time" value="19:00" class="form-control" /></div>
+        </div>
+        <button type="submit" class="btn btn-accent">Tạo hàng loạt</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Danh sách chuyến</h2>
+    <table class="table">
+        <thead><tr><th>Tàu</th><th>Tuyến</th><th>Ngày</th><th>Trạng thái</th><th>Đổi trạng thái</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td><strong>@t.TrainCode</strong></td>
+                <td>@t.RouteName</td>
+                <td>@t.DepartureDate.ToString("dd/MM/yyyy")</td>
+                <td>
+                    <span class="badge @(t.Status == "scheduled" ? "badge-primary" : t.Status == "running" ? "badge-warning" : t.Status == "completed" ? "badge-success" : "badge-muted")">@t.Status</span>
+                    @if (t.IsDelayed)
+                    {
+                        <span class="badge" style="background:#FB8C00;color:#fff;">Hoãn @t.DelayMinutes phút</span>
+                    }
+                </td>
+                <td>
+                    <form asp-action="SetTripStatus" asp-controller="QuanTri" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="tripId" value="@t.TripId" />
+                        <select name="status" class="form-control" style="display:inline-block; width:auto;">
+                            <option value="scheduled">scheduled</option>
+                            <option value="running">running</option>
+                            <option value="completed">completed</option>
+                            <option value="cancelled">cancelled</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
+                    </form>
+                </td>
+                <td style="white-space:nowrap;">
+                    <a href="@Url.Action("TripDetail", "QuanTri", new { id = t.TripId })" class="btn btn-light btn-sm">Chi tiết</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

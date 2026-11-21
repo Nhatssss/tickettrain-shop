@@ -1,0 +1,25 @@
+@model TrainTicketWeb.Models.User
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+}
+
+<div class="card" style="max-width:520px;">
+    <h2>Thông tin cá nhân</h2>
+    <form asp-action="Profile" asp-controller="Account" method="post">
+        @Html.AntiForgeryToken()
+        <div class="form-group">
+            <label>Họ và tên</label>
+            <input type="text" name="fullName" class="form-control" value="@Model.FullName" required />
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" class="form-control" value="@Model.Email" disabled />
+        </div>
+        <div class="form-group">
+            <label>Số điện thoại</label>
+            <input type="text" name="phone" class="form-control" value="@Model.Phone" />
+        </div>
+        <button type="submit" class="btn btn-primary">Cập nhật</button>
+        <a href="@Url.Action("ChangePassword", "Account")" class="btn btn-outline">Đổi mật khẩu</a>
+    </form>
+</div>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản trị vé tàu</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })" class="brand">
+            <span class="logo">VT</span>
+            <span>Quản trị</span>
+        </a>
+        <div class="nav-links">
+            <a href="@Url.Action("Index", "Home")">Về trang khách</a>
+            @if (User.Identity.IsAuthenticated)
+            {
+                <a href="@Url.Action("Profile", "Account")">@User.Identity.Name</a>
+                <form asp-controller="Account" asp-action="Logout" asp-area="" method="post" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-accent btn-sm">Đăng xuất</button>
+                </form>
+            }
+        </div>
+    </nav>
+
+    <div class="admin-wrap">
+        <aside class="admin-side">
+            <div class="side-title">Danh mục</div>
+            <a href="@Url.Action("Index", "Dashboard", new { area = "Admin" })">Tổng quan</a>
+            <a href="@Url.Action("Stations", "Station", new { area = "Admin" })">Ga tàu</a>
+            <a href="@Url.Action("Routes", "Route", new { area = "Admin" })">Tuyến đường</a>
+            <a href="@Url.Action("Trains", "Train", new { area = "Admin" })">Đoàn tàu</a>
+            <a href="@Url.Action("Trips", "Trip", new { area = "Admin" })">Chuyến tàu</a>
+
+            <div class="side-title">Bán vé</div>
+            <a href="@Url.Action("Fares", "Fare", new { area = "Admin" })">Bảng giá</a>
+            <a href="@Url.Action("PassengerTypes", "PassengerType", new { area = "Admin" })">Đối tượng khách</a>
+            <a href="@Url.Action("Bookings", "Booking", new { area = "Admin" })">Đơn hàng</a>
+            <a href="@Url.Action("Refunds", "Refund", new { area = "Admin" })">Hoàn tiền</a>
+
+            <div class="side-title">Hệ thống</div>
+            <a href="@Url.Action("Users", "User", new { area = "Admin" })">Người dùng</a>
+        </aside>
+
+        <main class="admin-main">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error">@TempData["Error"]</div>
+            }
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">@TempData["Success"]</div>
+            }
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer">
+        Hệ thống bán vé tàu hỏa trực tuyến — Đồ án học tập
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,222 @@
+@using TrainTicketWeb.Models
+@model List<Coupon>
+@{
+    ViewData["Title"] = "Mã giảm giá";
+    Layout = "_AdminLayout";
+    var activeCount = (int)(ViewBag.ActiveCount ?? 0);
+}
+
+<div class="page-head">
+    <div>
+        <h1>Mã giảm giá</h1>
+        <p class="page-sub">Quản lý mã khuyến mãi áp dụng ở bước thanh toán.</p>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="openCoupon(0)">+ Tạo mã mới</button>
+</div>
+
+<div class="stat-row">
+    <div class="stat-card">
+        <span class="stat-label">Tổng số mã</span>
+        <span class="stat-value">@Model.Count</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Đang hoạt động</span>
+        <span class="stat-value" style="color:#2E7D32;">@activeCount</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Lượt đã dùng</span>
+        <span class="stat-value">@Model.Sum(c => c.UsedCount)</span>
+    </div>
+</div>
+
+<div class="card">
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Mã</th><th>Mức giảm</th><th>Điều kiện</th><th>Đã dùng</th>
+            <th>Hiệu lực</th><th>Trạng thái</th><th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @if (Model.Count == 0)
+        {
+            <tr><td colspan="7" style="text-align:center;color:#8a94a3;padding:28px;">Chưa có mã giảm giá nào.</td></tr>
+        }
+        @foreach (var c in Model)
+        {
+            <tr>
+                <td>
+                    <strong style="font-family:monospace;font-size:1.02rem;letter-spacing:.5px;">@c.Code</strong>
+                    @if (!string.IsNullOrWhiteSpace(c.Description))
+                    {
+                        <div style="color:#8a94a3;font-size:.85rem;">@c.Description</div>
+                    }
+                </td>
+                <td><span class="badge badge-success">@c.DiscountLabel</span></td>
+                <td style="font-size:.88rem;color:#5b6472;">
+                    @if (c.MinOrder > 0) { <div>Đơn từ @c.MinOrder.ToString("N0") ₫</div> }
+                    @if (c.MaxDiscount.HasValue) { <div>Giảm tối đa @c.MaxDiscount.Value.ToString("N0") ₫</div> }
+                    @if (c.MaxUses.HasValue) { <div>Tổng @c.MaxUses lượt</div> }
+                    <div>@c.PerUserLimit lượt/khách</div>
+                </td>
+                <td>@c.UsedCount</td>
+                <td style="font-size:.88rem;">
+                    @c.ValidFrom.ToString("dd/MM/yyyy")
+                    @if (c.ValidTo.HasValue) { <text> → @c.ValidTo.Value.ToString("dd/MM/yyyy")</text> }
+                    else { <span style="color:#8a94a3;"> → không giới hạn</span> }
+                </td>
+                <td>
+                    @if (c.IsExpired)
+                    {
+                        <span class="badge badge-muted">Hết hạn</span>
+                    }
+                    else if (c.IsOutOfUses)
+                    {
+                        <span class="badge badge-muted">Hết lượt</span>
+                    }
+                    else if (c.IsActive)
+                    {
+                        <span class="badge badge-success">Hoạt động</span>
+                    }
+                    else
+                    {
+                        <span class="badge" style="background:#FB8C00;color:#fff;">Tạm dừng</span>
+                    }
+                </td>
+                <td style="white-space:nowrap;">
+                    <button type="button" class="btn btn-light btn-sm"
+                            onclick='openCoupon(@c.CouponId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+                                code = c.Code, description = c.Description, type = c.DiscountType,
+                                value = c.DiscountValue, maxDiscount = c.MaxDiscount, minOrder = c.MinOrder,
+                                maxUses = c.MaxUses, perUser = c.PerUserLimit,
+                                from = c.ValidFrom.ToString("yyyy-MM-dd"),
+                                to = c.ValidTo?.ToString("yyyy-MM-dd"), active = c.IsActive })))'>
+                        Sửa
+                    </button>
+                    <form asp-action="SetCouponActive" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@c.CouponId" />
+                        <input type="hidden" name="active" value="@(c.IsActive ? "false" : "true")" />
+                        <button type="submit" class="btn btn-light btn-sm">@(c.IsActive ? "Tạm dừng" : "Bật")</button>
+                    </form>
+                    @if (c.UsedCount == 0)
+                    {
+                        <form asp-action="DeleteCoupon" method="post" style="display:inline;"
+                              onsubmit="return confirm('Xóa mã @c.Code?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@c.CouponId" />
+                            <button type="submit" class="btn btn-light btn-sm" style="color:#E53935;">Xóa</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+@* ===== Hộp thoại tạo / sửa mã ===== *@
+<div id="couponModal" class="modal-mask" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3 id="couponTitle">Tạo mã giảm giá</h3>
+            <button type="button" class="modal-x" onclick="closeCoupon()">×</button>
+        </div>
+        <form asp-action="SaveCoupon" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="CouponId" id="f_id" value="0" />
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mã <span style="color:#E53935;">*</span></label>
+                        <input name="Code" id="f_code" class="form-control" maxlength="30"
+                               style="text-transform:uppercase;font-family:monospace;" required />
+                        <small style="color:#8a94a3;">Chỉ chữ và số, từ 3 ký tự.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Loại giảm</label>
+                        <select name="DiscountType" id="f_type" class="form-control">
+                            <option value="percent">Theo phần trăm</option>
+                            <option value="amount">Số tiền cố định</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mức giảm <span style="color:#E53935;">*</span></label>
+                        <input name="DiscountValue" id="f_value" type="number" step="0.01" min="0" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Giảm tối đa (₫)</label>
+                        <input name="MaxDiscount" id="f_max" type="number" step="1000" min="0" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Đơn tối thiểu (₫)</label>
+                        <input name="MinOrder" id="f_min" type="number" step="1000" min="0" class="form-control" value="0" />
+                    </div>
+                    <div class="form-group">
+                        <label>Tổng lượt tối đa</label>
+                        <input name="MaxUses" id="f_uses" type="number" min="1" class="form-control" placeholder="Không giới hạn" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Lượt / khách</label>
+                        <input name="PerUserLimit" id="f_per" type="number" min="1" class="form-control" value="1" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Từ ngày</label>
+                        <input name="ValidFrom" id="f_from" type="date" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Đến ngày</label>
+                        <input name="ValidTo" id="f_to" type="date" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Mô tả</label>
+                    <input name="Description" id="f_desc" class="form-control" maxlength="200" />
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;font-weight:500;">
+                    <input type="checkbox" name="IsActive" id="f_active" value="true" checked style="width:auto;" />
+                    Đang hoạt động
+                </label>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-light" onclick="closeCoupon()">Hủy</button>
+                <button type="submit" class="btn btn-primary">Lưu mã</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    var today = '@DateTime.Today.ToString("yyyy-MM-dd")';
+
+    function openCoupon(id, data) {
+        document.getElementById('couponTitle').textContent = id > 0 ? 'Sửa mã giảm giá' : 'Tạo mã giảm giá';
+        document.getElementById('f_id').value = id || 0;
+        document.getElementById('f_code').value = data ? data.code : '';
+        document.getElementById('f_desc').value = data ? (data.description || '') : '';
+        document.getElementById('f_type').value = data ? data.type : 'percent';
+        document.getElementById('f_value').value = data ? data.value : '';
+        document.getElementById('f_max').value = data && data.maxDiscount ? data.maxDiscount : '';
+        document.getElementById('f_min').value = data ? (data.minOrder || 0) : 0;
+        document.getElementById('f_uses').value = data && data.maxUses ? data.maxUses : '';
+        document.getElementById('f_per').value = data ? data.perUser : 1;
+        document.getElementById('f_from').value = data ? data.from : today;
+        document.getElementById('f_to').value = data && data.to ? data.to : '';
+        document.getElementById('f_active').checked = data ? !!data.active : true;
+        document.getElementById('couponModal').style.display = 'flex';
+    }
+
+    function closeCoupon() { document.getElementById('couponModal').style.display = 'none'; }
+
+    document.getElementById('couponModal').addEventListener('click', function (e) {
+        if (e.target === this) closeCoupon();
+    });
+</script>
+}

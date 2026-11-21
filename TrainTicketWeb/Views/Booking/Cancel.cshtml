@@ -1,0 +1,28 @@
+﻿@model TrainTicketWeb.ViewModels.TicketDetailViewModel
+@{
+    ViewData["Title"] = "Hủy vé";
+}
+
+<div class="card" style="max-width:560px;">
+    <h2 class="text-accent">Xác nhận hủy vé</h2>
+    <table class="table">
+        <tr><th>Mã vé</th><td>@Model.Ticket.TicketCode</td></tr>
+        <tr><th>Hành khách</th><td>@Model.Ticket.PassengerName</td></tr>
+        <tr><th>Chuyến</th><td>@Model.TrainCode · @Model.FromStationName → @Model.ToStationName</td></tr>
+        <tr><th>Giá vé</th><td>@Model.Ticket.FinalPrice.ToString("N0") ₫</td></tr>
+        <tr><th>Phí hủy</th><td class="text-accent">@ViewBag.Fee.ToString("N0") ₫</td></tr>
+        <tr><th>Số tiền hoàn lại</th><td class="price">@ViewBag.Refund.ToString("N0") ₫</td></tr>
+    </table>
+
+    <div class="alert alert-warning">
+        Còn @((int)ViewBag.HoursBefore) giờ trước giờ khởi hành.
+        Sau khi xác nhận, yêu cầu hủy sẽ được gửi đến quản trị viên để xử lý hoàn tiền.
+    </div>
+
+    <form asp-action="CancelConfirmed" asp-controller="Booking" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ticketId" value="@Model.Ticket.TicketId" />
+        <button type="submit" class="btn btn-accent">Xác nhận hủy vé</button>
+        <a href="@Url.Action("Detail", "Booking", new { bookingId = Model.Ticket.BookingId })" class="btn btn-outline">Quay lại</a>
+    </form>
+</div>

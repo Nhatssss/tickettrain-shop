@@ -1,0 +1,102 @@
+@model TrainTicketWeb.ViewModels.FinancePageViewModel
+@{
+    ViewData["Title"] = "Quỹ & khách hàng";
+    Layout = "_AdminLayout";
+    var s = Model.Summary;
+}
+
+<div class="page-head">
+    <div>
+        <h1>Quỹ &amp; số tiền của khách</h1>
+        <p class="page-sub">Số liệu lấy trực tiếp từ bảng thanh toán và hoàn tiền — không dùng ví ảo.</p>
+    </div>
+</div>
+
+<div class="stat-row">
+    <div class="stat-card">
+        <span class="stat-label">Quỹ hiện tại</span>
+        <span class="stat-value price">@s.Fund.ToString("N0") ₫</span>
+        <small style="color:#8a94a3;">Đã thu − đã hoàn</small>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Tổng đã thu</span>
+        <span class="stat-value">@s.GrossIncome.ToString("N0") ₫</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Đã hoàn cho khách</span>
+        <span class="stat-value" style="color:#E53935;">@s.TotalRefunded.ToString("N0") ₫</span>
+        <small style="color:#8a94a3;">Tỷ lệ hoàn @s.RefundRate.ToString("0.0")%</small>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Giảm giá đã cấp</span>
+        <span class="stat-value" style="color:#2E7D32;">@s.TotalDiscount.ToString("N0") ₫</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Hoàn tiền chờ duyệt</span>
+        <span class="stat-value">@s.PendingRefundAmount.ToString("N0") ₫</span>
+        <small style="color:#8a94a3;">@s.PendingRefundCount yêu cầu</small>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Khách hàng</span>
+        <span class="stat-value">@s.CustomerCount</span>
+        <small style="color:#8a94a3;">@s.LockedCustomerCount đang bị khóa</small>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Số tiền của từng khách</h3>
+    <p style="color:#5b6472;font-size:.9rem;">
+        Cột <strong>Còn lại</strong> = đã trả − đã hoàn: số tiền khách đang thực sự bỏ ra cho hệ thống.
+    </p>
+    @if (Model.Customers.Count == 0)
+    {
+        <p style="color:#8a94a3;">Chưa có khách hàng nào phát sinh giao dịch.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Khách</th><th>Đơn</th><th>Đã trả</th><th>Đã hoàn</th>
+                <th>Tiết kiệm nhờ mã</th><th>Còn lại</th><th>Trạng thái</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var c in Model.Customers.OrderByDescending(x => x.TotalSpent))
+            {
+                <tr>
+                    <td>
+                        <strong>@(string.IsNullOrWhiteSpace(c.FullName) ? c.Email : c.FullName)</strong>
+                        <div style="color:#8a94a3;font-size:.82rem;">@c.Email</div>
+                    </td>
+                    <td>@c.BookingCount</td>
+                    <td>@c.TotalSpent.ToString("N0") ₫</td>
+                    <td style="color:#E53935;">@c.TotalRefunded.ToString("N0") ₫</td>
+                    <td style="color:#2E7D32;">@c.TotalDiscountSaved.ToString("N0") ₫</td>
+                    <td class="price">@c.Balance.ToString("N0") ₫</td>
+                    <td>
+                        @if (c.Status == "locked")
+                        {
+                            <span class="badge badge-accent">Bị khóa</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-success">Hoạt động</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+            <tfoot>
+            <tr style="background:#F0F4FA;font-weight:700;">
+                <td colspan="2">Tổng cộng</td>
+                <td>@Model.Customers.Sum(c => c.TotalSpent).ToString("N0") ₫</td>
+                <td style="color:#E53935;">@Model.Customers.Sum(c => c.TotalRefunded).ToString("N0") ₫</td>
+                <td style="color:#2E7D32;">@Model.Customers.Sum(c => c.TotalDiscountSaved).ToString("N0") ₫</td>
+                <td class="price">@Model.Customers.Sum(c => c.Balance).ToString("N0") ₫</td>
+                <td></td>
+            </tr>
+            </tfoot>
+        </table>
+    }
+</div>

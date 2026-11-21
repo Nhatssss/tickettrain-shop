@@ -1,0 +1,86 @@
+﻿@model TrainTicketWeb.ViewModels.SearchResultsViewModel
+@{
+    ViewData["Title"] = "Kết quả tìm kiếm";
+}
+
+<div class="card">
+    <h2>Kết quả tìm kiếm</h2>
+    <p class="text-muted">
+        @Model.FromStationName → @Model.ToStationName
+        · Ngày đi: @Model.Query.DepartureDate?.ToString("dd/MM/yyyy")
+        @if (Model.Query.TripType == "round_trip")
+        {
+            <span> · Ngày về: @Model.Query.ReturnDate?.ToString("dd/MM/yyyy")</span>
+        }
+        · @Model.Query.TotalPassengers hành khách
+    </p>
+    <a href="@Url.Action("Index", "Home")" class="btn btn-outline btn-sm">Tìm kiếm lại</a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Query.Error))
+{
+    <div class="alert alert-error">@Model.Query.Error</div>
+}
+
+@{
+    async Task RenderTrips(List<TripSearchResultViewModel> trips, string leg, int fromId, int toId, int pax)
+    {
+        @if (trips.Count == 0)
+        {
+            <div class="alert alert-warning">Không tìm thấy chuyến phù hợp cho @(leg == "return" ? "chiều về" : "chiều đi").</div>
+        }
+        else
+        {
+            <div class="card">
+                <h3>@(leg == "return" ? "Chiều về" : "Chiều đi") — chọn chuyến</h3>
+                <table class="table">
+                    <thead><tr><th>Tàu</th><th>Tuyến</th><th>Giờ đi</th><th>Giờ đến</th><th>Thời gian</th><th>Chỗ trống</th><th>Giá từ</th><th></th></tr></thead>
+                    <tbody>
+                    @foreach (var t in trips)
+                    {
+                        <tr>
+                            <td><strong>@t.TrainCode</strong></td>
+                            <td>@t.RouteName</td>
+                            <td>
+                                @if (t.DelayMinutes > 0)
+                                {
+                                    <div><span style="text-decoration:line-through;color:#8a94a3;">@t.DepartureTime?.ToString("HH:mm")</span>
+                                        <strong>@t.NewDepartureTime?.ToString("HH:mm")</strong></div>
+                                    <span class="badge" style="background:#FB8C00;color:#fff;">Hoãn @t.DelayMinutes phút</span>
+                                }
+                                else
+                                {
+                                    @t.DepartureTime?.ToString("HH:mm")
+                                }
+                            </td>
+                            <td>@t.ArrivalTime?.ToString("HH:mm")</td>
+                            <td>@t.Duration.ToString(@"hh\:mm")</td>
+                            <td><span class="badge @(t.AvailableSeats > 0 ? "badge-success" : "badge-muted")">@t.AvailableSeats chỗ</span></td>
+                            <td class="price">@t.MinPrice.ToString("N0") ₫</td>
+                            <td>
+                                @if (t.AvailableSeats > 0)
+                                {
+                                    <a href="@Url.Action("SelectSeats", "Booking", new { tripId = t.TripId, fromId, toId, leg, passengerCount = pax })" class="btn btn-primary btn-sm">Chọn chỗ</a>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-muted">Hết chỗ</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+}
+
+@{
+    var q = Model.Query;
+    await RenderTrips(Model.Outbound, "outbound", q.FromStationId, q.ToStationId, q.TotalPassengers);
+    if (q.TripType == "round_trip")
+    {
+        await RenderTrips(Model.Return, "return", q.ToStationId, q.FromStationId, q.TotalPassengers);
+    }
+}

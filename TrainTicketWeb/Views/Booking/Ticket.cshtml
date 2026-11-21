@@ -1,0 +1,83 @@
+﻿@model TrainTicketWeb.ViewModels.TicketDetailViewModel
+@{
+    ViewData["Title"] = "Vé điện tử";
+    var qrContent = Model.Ticket.TicketCode;
+}
+
+<div class="card ticket-box" style="max-width:640px; margin:20px auto;">
+    <div class="flex-between">
+        <h2 style="margin:0;" class="text-primary">VÉ TÀU HỎA</h2>
+        <span class="badge @(Model.Ticket.Status == "paid" ? "badge-success" : "badge-muted")">
+            @(Model.Ticket.Status == "paid" ? "Đã thanh toán" : Model.Ticket.Status)
+        </span>
+    </div>
+
+    @if (Model.TripIsCancelled)
+    {
+        <div class="trip-alert trip-alert-cancel" style="margin-top:16px;">
+            <div>
+                <strong>Chuyến tàu này đã bị hủy</strong>
+                <div style="font-size:.9rem;">
+                    Hệ thống đã hoàn 100% tiền vé vào tài khoản của bạn.
+                    @if (!string.IsNullOrWhiteSpace(Model.CancelReason))
+                    {
+                        <text>Lý do: @Model.CancelReason</text>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.DelayMinutes > 0)
+    {
+        <div class="trip-alert trip-alert-delay" style="margin-top:16px;">
+            <div>
+                <strong>Tàu khởi hành muộn @Model.DelayMinutes phút</strong>
+                <div style="font-size:.9rem;">
+                    Giờ đi dự kiến mới:
+                    <b>@(Model.DepartureTime?.AddMinutes(Model.DelayMinutes).ToString("HH:mm dd/MM/yyyy") ?? "—")</b>
+                    (giờ gốc @Model.DepartureTime?.ToString("HH:mm")). Vui lòng có mặt trước giờ tàu chạy 20 phút.
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="flex-between mt-3">
+        <div>
+            <div class="text-muted">Mã vé</div>
+            <div style="font-size:1.4rem; font-weight:800;">@Model.Ticket.TicketCode</div>
+            <div class="text-muted mt-2">Mã đơn: @ViewBag.BookingCode</div>
+        </div>
+        <div class="qr">
+            @Html.Raw(TrainTicketWeb.Services.QrHelper.Svg(qrContent))
+            <div class="text-muted" style="font-size:.75rem;">@qrContent</div>
+        </div>
+    </div>
+
+    <hr style="border-color:#E3E8EF;" />
+
+    <table class="table">
+        <tr><th>Hành khách</th><td>@Model.Ticket.PassengerName</td></tr>
+        <tr><th>Đối tượng</th><td>@Model.PassengerTypeName</td></tr>
+        <tr><th>Tàu</th><td>@Model.TrainCode</td></tr>
+        <tr><th>Hành trình</th><td>@Model.FromStationName → @Model.ToStationName</td></tr>
+        <tr><th>Toa / Chỗ</th><td>Toa @Model.CoachNumber — Chỗ @Model.SeatNumber (@Model.CoachTypeName)</td></tr>
+        <tr><th>Giờ đi</th>
+            <td>
+                @Model.DepartureTime?.ToString("HH:mm dd/MM/yyyy")
+                @if (Model.DelayMinutes > 0)
+                {
+                    <div style="color:#A85400;font-size:.85rem;">
+                        Hoãn @Model.DelayMinutes phút → mới: @(Model.DepartureTime?.AddMinutes(Model.DelayMinutes).ToString("HH:mm"))
+                    </div>
+                }
+            </td>
+        </tr>
+        <tr><th>Giờ đến</th><td>@Model.ArrivalTime?.ToString("HH:mm dd/MM/yyyy")</td></tr>
+        <tr><th>Giá vé</th><td class="price">@Model.Ticket.FinalPrice.ToString("N0") ₫</td></tr>
+    </table>
+
+    <div class="flex-between mt-3">
+        <a href="@Url.Action("MyBookings", "Booking")" class="btn btn-outline">Quay lại</a>
+        <button onclick="window.print()" class="btn btn-primary">In vé</button>
+    </div>
+</div>

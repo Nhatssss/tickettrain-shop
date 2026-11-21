@@ -1,0 +1,46 @@
+@model List<TrainTicketWeb.Models.Booking>
+@{
+    ViewData["Title"] = "Lịch sử đặt vé";
+}
+
+<div class="card">
+    <h2>Lịch sử đặt vé</h2>
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info">Bạn chưa có đơn đặt vé nào.</div>
+    }
+    else
+    {
+        <table class="table">
+            <thead><tr><th>Mã đơn</th><th>Ngày đặt</th><th>Tổng tiền</th><th>Trạng thái</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var b in Model)
+            {
+                var cls = b.Status switch
+                {
+                    "paid" => "badge-success",
+                    "holding" => "badge-warning",
+                    "expired" => "badge-muted",
+                    "cancelled" => "badge-accent",
+                    _ => "badge-muted"
+                };
+                var label = b.Status switch
+                {
+                    "paid" => "Đã thanh toán",
+                    "holding" => "Đang giữ chỗ",
+                    "expired" => "Hết hạn",
+                    "cancelled" => "Đã hủy",
+                    _ => b.Status
+                };
+                <tr>
+                    <td><strong>@b.BookingCode</strong></td>
+                    <td>@b.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="price">@b.TotalAmount.ToString("N0") ₫</td>
+                    <td><span class="badge @cls">@label</span></td>
+                    <td><a href="@Url.Action("Detail", "Booking", new { bookingId = b.BookingId })" class="btn btn-primary btn-sm">Chi tiết</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

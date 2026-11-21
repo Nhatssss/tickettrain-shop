@@ -1,0 +1,71 @@
+﻿@model TrainTicketWeb.ViewModels.BookingDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết đơn";
+}
+
+<div class="card">
+    <h2>Đơn @Model.Booking.BookingCode</h2>
+    <p class="text-muted">
+        Ngày đặt: @Model.Booking.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+        · Loại vé: @(Model.Booking.TripType == "round_trip" ? "Khứ hồi" : "Một chiều")
+    </p>
+
+    <table class="table">
+        <thead><tr><th>Vé</th><th>Hành khách</th><th>Chuyến</th><th>Chỗ</th><th>Giá</th><th>Trạng thái</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var t in Model.Tickets)
+        {
+            var cls = t.Ticket.Status switch
+            {
+                "paid" => "badge-success",
+                "holding" => "badge-warning",
+                "expired" => "badge-muted",
+                "cancelled" => "badge-accent",
+                _ => "badge-muted"
+            };
+            var label = t.Ticket.Status switch
+            {
+                "paid" => "Đã thanh toán",
+                "holding" => "Đang giữ chỗ",
+                "expired" => "Hết hạn",
+                "cancelled" => "Đã hủy",
+                _ => t.Ticket.Status
+            };
+            <tr>
+                <td><strong>@t.Ticket.TicketCode</strong></td>
+                <td>@t.Ticket.PassengerName <br /><span class="text-muted">@t.PassengerTypeName</span></td>
+                <td>@t.TrainCode · @t.FromStationName → @t.ToStationName</td>
+                <td>Toa @t.CoachNumber · Chỗ @t.SeatNumber</td>
+                <td class="price">@t.Ticket.FinalPrice.ToString("N0") ₫</td>
+                <td><span class="badge @cls">@label</span></td>
+                <td>
+                    <a href="@Url.Action("Ticket", "Booking", new { ticketId = t.Ticket.TicketId })" class="btn btn-primary btn-sm">Vé</a>
+                    @if (t.Ticket.Status == "paid")
+                    {
+                        <a href="@Url.Action("Cancel", "Booking", new { ticketId = t.Ticket.TicketId })" class="btn btn-accent btn-sm">Hủy</a>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    @if (Model.Payments.Count > 0)
+    {
+        <h3>Thanh toán</h3>
+        <table class="table">
+            <thead><tr><th>Phương thức</th><th>Số tiền</th><th>Mã giao dịch</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+            @foreach (var p in Model.Payments)
+            {
+                <tr>
+                    <td>@p.Method</td>
+                    <td>@p.Amount.ToString("N0") ₫</td>
+                    <td>@p.TransactionRef</td>
+                    <td>@p.Status</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

@@ -1,0 +1,40 @@
+@model List<TrainTicketWeb.Models.PassengerType>
+@{
+    ViewData["Title"] = "Quản lý chính sách giảm giá";
+}
+
+<div class="card">
+    <h2>Thêm / sửa đối tượng</h2>
+    <form asp-action="SavePassengerType" asp-area="Admin" asp-controller="PassengerType" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="0" />
+        <div class="form-row">
+            <div class="form-group"><label>Tên đối tượng</label><input type="text" name="type_name" class="form-control" required /></div>
+            <div class="form-group"><label>Giảm giá (%)</label><input type="number" min="0" max="100" step="0.01" name="discount_percent" class="form-control" value="0" required /></div>
+            <div class="form-group"><label>Tuổi tối thiểu</label><input type="number" name="min_age" class="form-control" /></div>
+            <div class="form-group"><label>Tuổi tối đa</label><input type="number" name="max_age" class="form-control" /></div>
+            <div class="form-group"><label>Giấy tờ yêu cầu</label><input type="text" name="id_label" class="form-control" placeholder="VD: CCCD / Mã SV" /></div>
+            <div class="form-group"><label>Áp dụng</label><select name="is_active" class="form-control"><option value="true">Có</option><option value="false">Không</option></select></div>
+        </div>
+        <button type="submit" class="btn btn-primary">Thêm</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Danh sách đối tượng</h2>
+    <table class="table">
+        <thead><tr><th>Tên</th><th>Giảm giá</th><th>Độ tuổi</th><th>Giấy tờ</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td><strong>@p.TypeName</strong></td>
+                <td>@p.DiscountPercent%</td>
+                <td>@(p.MinAge?.ToString() ?? "—") - @(p.MaxAge?.ToString() ?? "—")</td>
+                <td>@(p.IdLabel ?? "—")</td>
+                <td><span class="badge @(p.IsActive ? "badge-success" : "badge-muted")">@(p.IsActive ? "Áp dụng" : "Ngừng")</span></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

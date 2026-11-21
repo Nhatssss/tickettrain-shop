@@ -1,0 +1,222 @@
+@model TrainTicketWeb.ViewModels.SearchViewModel
+@{
+    ViewData["Title"] = "Trang chủ";
+
+    // Dùng Url.Content để chạy đúng cả khi site nằm trong thư mục con của host.
+    var stationPhotos = new Dictionary<string, string>
+    {
+        { "HAN", Url.Content("~/images/station-hanoi.jpg") },
+        { "VIN", Url.Content("~/images/station-vinh-tall.jpg") },
+        { "HUE", Url.Content("~/images/station-hue.jpg") },
+        { "DAD", Url.Content("~/images/station-danang.jpg") },
+        { "NTR", Url.Content("~/images/station-nhatrang.jpg") },
+        { "SGN", Url.Content("~/images/station-saigon.jpg") }
+    };
+    var photoFallback = new[] {
+        Url.Content("~/images/bg-trainstation.jpg"),
+        Url.Content("~/images/bg-vietnamtrain.jpg"),
+        Url.Content("~/images/bg-railphoto.jpg"),
+        Url.Content("~/images/bg-railway2.jpg")
+    };
+}
+
+<section class="hero">
+    <div class="hero-inner">
+        <span class="kicker">Đường sắt Bắc — Nam</span>
+        <h1>Đặt vé tàu hỏa trực tuyến</h1>
+        <p class="lead">Tra cứu chuyến, chọn chỗ trên sơ đồ toa thật, giữ chỗ 15 phút và thanh toán QR — tất cả trong một luồng duy nhất.</p>
+        <div class="hero-chips">
+            <span>Giữ chỗ 15 phút</span>
+            <span>Sơ đồ toa trực quan</span>
+            <span>Thanh toán QR</span>
+            <span>Hoàn vé theo giờ</span>
+        </div>
+    </div>
+</section>
+
+<div class="feature-grid">
+    <div class="feature">
+        <div class="fnum">1</div>
+        <h4>Tìm chuyến</h4>
+        <p>Chọn ga đi — ga đến và ngày khởi hành, xem giờ tàu và số chỗ còn trống tức thời.</p>
+    </div>
+    <div class="feature c2">
+        <div class="fnum">2</div>
+        <h4>Chọn chỗ</h4>
+        <p>Sơ đồ từng toa với trạng thái trống / đang giữ / đã bán. Chỗ bạn chọn được giữ 15 phút.</p>
+    </div>
+    <div class="feature c3">
+        <div class="fnum">3</div>
+        <h4>Nhập hành khách</h4>
+        <p>Khai báo họ tên, giấy tờ và đối tượng — giá vé tự tính ưu đãi trẻ em, sinh viên, cao tuổi.</p>
+    </div>
+    <div class="feature c4">
+        <div class="fnum">4</div>
+        <h4>Thanh toán &amp; nhận vé</h4>
+        <p>Trả bằng ví điện tử hoặc QR, nhận vé điện tử kèm mã QR để soát vé khi lên tàu.</p>
+    </div>
+</div>
+
+<div class="card search-card" id="tim-chuyen">
+    <h2>Tìm chuyến tàu</h2>
+    @if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-error">@Model.Error</div>
+    }
+    <form asp-action="Search" asp-controller="Home" method="get">
+        <div class="form-row">
+            <div class="form-group has-ico">
+                <label>Ga đi</label>
+                <span class="fld-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                    </svg>
+                </span>
+                <select name="FromStationId" class="form-control">
+                    <option value="">— Chọn ga đi —</option>
+                    @foreach (var s in Model.Stations)
+                    {
+                        <option value="@s.StationId" selected="@(s.StationId == Model.FromStationId)">@s.StationName (@s.StationCode)</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group has-ico">
+                <label>Ga đến</label>
+                <span class="fld-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </span>
+                <select name="ToStationId" class="form-control">
+                    <option value="">— Chọn ga đến —</option>
+                    @foreach (var s in Model.Stations)
+                    {
+                        <option value="@s.StationId" selected="@(s.StationId == Model.ToStationId)">@s.StationName (@s.StationCode)</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group has-ico">
+                <label>Loại vé</label>
+                <span class="fld-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 1 0-6V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z" />
+                        <path d="M13 6v12" stroke-dasharray="2 2" />
+                    </svg>
+                </span>
+                <select name="TripType" class="form-control">
+                    <option value="one_way" selected="@(Model.TripType == "one_way")">Một chiều</option>
+                    <option value="round_trip" selected="@(Model.TripType == "round_trip")">Khứ hồi</option>
+                </select>
+            </div>
+            <div class="form-group has-ico">
+                <label>Ngày đi</label>
+                <span class="fld-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="5" width="18" height="16" rx="2" />
+                        <path d="M8 3v4M16 3v4M3 11h18" />
+                    </svg>
+                </span>
+                <input type="date" name="DepartureDate" class="form-control" value="@(Model.DepartureDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="form-group has-ico">
+                <label>Ngày về (nếu khứ hồi)</label>
+                <span class="fld-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 3-6.7" />
+                        <path d="M3 4v5h5" />
+                    </svg>
+                </span>
+                <input type="date" name="ReturnDate" class="form-control" value="@(Model.ReturnDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+        </div>
+        <div class="form-row qty-row">
+            <div class="form-group has-ico">
+                <label>Người lớn</label>
+                <span class="fld-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="7" r="4" />
+                        <path d="M4 21v-2a6 6 0 0 1 16 0v2" />
+                    </svg>
+                </span>
+                <input type="number" min="0" name="AdultCount" value="@Model.AdultCount" class="form-control" />
+            </div>
+            <div class="form-group has-ico">
+                <label>Trẻ em</label>
+                <span class="fld-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="3.5" />
+                        <path d="M6 21v-1.5A5.5 5.5 0 0 1 11.5 14h1A5.5 5.5 0 0 1 18 19.5V21" />
+                    </svg>
+                </span>
+                <input type="number" min="0" name="ChildCount" value="@Model.ChildCount" class="form-control" />
+            </div>
+            <div class="form-group has-ico">
+                <label>Sinh viên</label>
+                <span class="fld-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 9 12 4 2 9l10 5 10-5Z" />
+                        <path d="M6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5" />
+                    </svg>
+                </span>
+                <input type="number" min="0" name="StudentCount" value="@Model.StudentCount" class="form-control" />
+            </div>
+            <div class="form-group has-ico">
+                <label>Người cao tuổi</label>
+                <span class="fld-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="10" cy="6" r="3" />
+                        <path d="M6 21v-4l2-4 3 2 3-1" />
+                        <path d="M14 21l-1-5" />
+                        <path d="M18 21v-6" />
+                    </svg>
+                </span>
+                <input type="number" min="0" name="SeniorCount" value="@Model.SeniorCount" class="form-control" />
+            </div>
+        </div>
+        <button type="submit" class="btn btn-accent btn-search">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+            </svg>
+            Tìm chuyến
+        </button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Các ga trên tuyến</h2>
+    <p class="text-muted" style="margin-top:-6px;">Tuyến Bắc — Nam đi qua 6 ga chính. Chọn ga trong ô tìm kiếm phía trên.</p>
+    <div class="station-strip">
+        @{ var idx = 0; }
+        @foreach (var s in Model.Stations)
+        {
+            string src;
+            if (!stationPhotos.TryGetValue(s.StationCode ?? "", out src) || !System.IO.File.Exists(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot" + src.Replace("/", "\\"))))
+            {
+                src = photoFallback[idx % photoFallback.Length];
+            }
+            idx++;
+            <div class="station-card">
+                <img src="@src" alt="@s.StationName" loading="lazy" />
+                <div class="sveil"></div>
+                <div class="sname">
+                    @s.StationName
+                    <span class="scode">@s.StationCode</span>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="photo-banner">
+    <img src="@Url.Content("~/images/banner-vietnam-rail.jpg")" alt="Tàu hỏa Việt Nam" loading="lazy" />
+    <div class="pveil"></div>
+    <div class="ptext">
+        <h3>Đi tàu, ngắm trọn dải đất hình chữ S</h3>
+        <p>Từ Hà Nội qua đèo Hải Vân tới Sài Gòn — mỗi chuyến là một hành trình đáng nhớ.</p>
+    </div>
+</div>

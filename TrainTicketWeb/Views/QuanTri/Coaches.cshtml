@@ -1,0 +1,47 @@
+@{
+    ViewData["Title"] = "Cấu hình toa/ghế";
+    var train = (TrainTicketWeb.Models.Train)ViewBag.Train;
+    var coachTypes = (List<TrainTicketWeb.Models.CoachType>)ViewBag.CoachTypes;
+    var coaches = (List<TrainTicketWeb.Models.Coach>)ViewBag.Coaches;
+}
+
+@if (train == null)
+{
+    <div class="alert alert-error">Không tìm thấy đoàn tàu.</div>
+}
+else
+{
+    <div class="card">
+        <h2>Cấu hình toa — @train.TrainCode (@train.RouteName)</h2>
+        <p class="text-muted">Thiết lập số toa cho từng loại. Hệ thống sẽ tự sinh sơ đồ ghế.</p>
+        <form asp-action="ConfigureTrain" asp-controller="QuanTri" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="trainId" value="@train.TrainId" />
+            @foreach (var ct in coachTypes)
+            {
+                var count = coaches.Count(c => c.CoachTypeId == ct.CoachTypeId);
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>@ct.TypeName (sức chứa @ct.Capacity chỗ)</label>
+                        <input type="hidden" name="coachTypeId" value="@ct.CoachTypeId" />
+                        <input type="number" min="0" name="coachCount" value="@count" class="form-control" style="max-width:140px;" />
+                    </div>
+                </div>
+            }
+            <button type="submit" class="btn btn-accent">Tạo lại sơ đồ toa</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Toa hiện tại</h2>
+        <table class="table">
+            <thead><tr><th>Toa số</th><th>Loại toa</th><th>Sức chứa</th></tr></thead>
+            <tbody>
+            @foreach (var c in coaches)
+            {
+                <tr><td>Toa @c.CoachNumber</td><td>@c.TypeName</td><td>@c.Capacity chỗ</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

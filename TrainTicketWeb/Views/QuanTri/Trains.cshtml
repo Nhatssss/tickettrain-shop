@@ -1,0 +1,43 @@
+@model List<TrainTicketWeb.Models.Train>
+@{
+    ViewData["Title"] = "Quản lý đoàn tàu";
+    var routes = (List<TrainTicketWeb.Models.Route>)ViewBag.Routes;
+}
+
+<div class="card">
+    <h2>Thêm / sửa đoàn tàu</h2>
+    <form asp-action="SaveTrain" asp-controller="QuanTri" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="0" />
+        <div class="form-row">
+            <div class="form-group"><label>Số hiệu tàu</label><input type="text" name="train_code" class="form-control" required placeholder="VD: SE1" /></div>
+            <div class="form-group">
+                <label>Tuyến</label>
+                <select name="route_id" class="form-control">
+                    @foreach (var r in routes)
+                    { <option value="@r.RouteId">@r.RouteName</option> }
+                </select>
+            </div>
+            <div class="form-group"><label>Khai thác</label><select name="is_active" class="form-control"><option value="true">Có</option><option value="false">Ngừng</option></select></div>
+        </div>
+        <button type="submit" class="btn btn-primary">Thêm đoàn tàu</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Danh sách đoàn tàu</h2>
+    <table class="table">
+        <thead><tr><th>Số hiệu</th><th>Tuyến</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td><strong>@t.TrainCode</strong></td>
+                <td>@t.RouteName</td>
+                <td><span class="badge @(t.IsActive ? "badge-success" : "badge-muted")">@(t.IsActive ? "Khai thác" : "Ngừng")</span></td>
+                <td><a href="@Url.Action("Coaches", "QuanTri")" class="btn btn-primary btn-sm">Cấu hình toa</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

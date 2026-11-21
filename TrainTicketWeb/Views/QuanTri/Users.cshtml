@@ -1,0 +1,40 @@
+@model List<TrainTicketWeb.Models.User>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<div class="card">
+    <h2>Danh sách người dùng</h2>
+    <table class="table">
+        <thead><tr><th>Họ tên</th><th>Email</th><th>Điện thoại</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.FullName</td>
+                <td>@u.Email</td>
+                <td>@u.Phone</td>
+                <td><span class="badge @(u.Role == "admin" ? "badge-accent" : "badge-primary")">@u.Role</span></td>
+                <td><span class="badge @(u.Status == "active" ? "badge-success" : "badge-muted")">@u.Status</span></td>
+                <td>
+                    @if (u.Role != "admin")
+                    {
+                        <form asp-action="SetUserStatus" asp-controller="QuanTri" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="userId" value="@u.UserId" />
+                            @if (u.Status == "active")
+                            {
+                                <button type="submit" name="status" value="locked" class="btn btn-accent btn-sm">Khóa</button>
+                            }
+                            else
+                            {
+                                <button type="submit" name="status" value="active" class="btn btn-success btn-sm">Mở khóa</button>
+                            }
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
