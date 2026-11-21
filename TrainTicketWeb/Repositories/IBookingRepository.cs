@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Microsoft.Data.SqlClient;
 using TrainTicketWeb.Models;
 using TrainTicketWeb.ViewModels;
@@ -21,7 +21,7 @@ public interface IBookingRepository
     TicketDetailViewModel GetTicket(int ticketId);
     BookingDetailViewModel GetBookingDetail(int bookingId);
     (bool ok, string msg, decimal fee, decimal refund) RequestRefund(int ticketId, int userId);
-    List<Booking> GetAll(string status = null);
+    List<Booking> GetAll(string status = null, string keyword = null);
     List<RefundDetailViewModel> GetRefunds();
     void ProcessRefund(int refundId, int adminId, bool approve);
 }
@@ -331,13 +331,30 @@ public class BookingRepository : IBookingRepository
             "SELECT * FROM bookings WHERE user_id = @u ORDER BY created_at DESC", Db.P("@u", userId)));
     }
 
-    public List<Booking> GetAll(string status = null)
+    public List<Booking> GetAll(string status = null, string keyword = null)
     {
         ExpireHeld();
+        var where = new List<string>();
+        var ps = new List<Microsoft.Data.SqlClient.SqlParameter>();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            where.Add("[status] = @s");
+            ps.Add(Db.P("@s", status.Trim()));
+        }
+
+        // Tim theo ma don, email lien he hoac so dien thoai lien he
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            where.Add("(booking_code LIKE @kw OR contact_email LIKE @kw OR contact_phone LIKE @kw)");
+            ps.Add(Db.P("@kw", "%" + keyword.Trim() + "%"));
+        }
+
         string sql = "SELECT * FROM bookings";
-        if (!string.IsNullOrWhiteSpace(status)) sql += " WHERE [status] = @s";
+        if (where.Count > 0) sql += " WHERE " + string.Join(" AND ", where);
         sql += " ORDER BY created_at DESC";
-        return Db.Map<Booking>(Db.Query(sql, Db.P("@s", status ?? "")));
+
+        return Db.Map<Booking>(Db.Query(sql, ps.ToArray()));
     }
 
     public List<Payment> GetPayments(int bookingId)

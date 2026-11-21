@@ -15,7 +15,7 @@ public interface IBookingService
     void UpdatePassengers(int bookingId, List<PassengerRow> rows);
     bool Pay(int bookingId, string method);
     List<Booking> GetMyBookings(int userId);
-    List<Booking> GetAll(string status = null);
+    List<Booking> GetAll(string status = null, string keyword = null);
     List<Payment> GetPayments(int bookingId);
     TicketDetailViewModel GetTicketDetail(int ticketId);
     BookingDetailViewModel GetBookingDetail(int bookingId);
@@ -56,7 +56,7 @@ public class BookingService : IBookingService
 
     public List<Booking> GetMyBookings(int userId) => _repo.GetByUser(userId);
 
-    public List<Booking> GetAll(string status = null) => _repo.GetAll(status);
+    public List<Booking> GetAll(string status = null, string keyword = null) => _repo.GetAll(status, keyword);
 
     public List<Payment> GetPayments(int bookingId) => _repo.GetPayments(bookingId);
 

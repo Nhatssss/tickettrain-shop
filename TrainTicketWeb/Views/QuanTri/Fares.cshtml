@@ -38,9 +38,26 @@
 
 <div class="card">
     <h2>Bảng giá hiện tại</h2>
+    <form asp-action="Fares" asp-controller="QuanTri" method="get" style="margin-bottom:14px;">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Tìm theo ga / loại toa</label>
+                <input type="text" name="keyword" value="@(ViewBag.Keyword ?? "")" class="form-control"
+                       placeholder="Hà Nội, Đà Nẵng, Ghế mềm..." style="max-width:300px;" />
+            </div>
+            <button type="submit" class="btn btn-primary">Tìm</button>
+            <a href="@Url.Action("Fares", "QuanTri")" class="btn btn-light">Xóa lọc</a>
+            <a href="@Url.Action("ExportFares", "QuanTri", new { keyword = ViewBag.Keyword })" class="btn btn-success">Xuất CSV</a>
+        </div>
+    </form>
+    <p class="text-muted">Tìm thấy <strong>@Model.Count</strong> mức giá.</p>
     <table class="table">
         <thead><tr><th>Ga đi</th><th>Ga đến</th><th>Loại toa</th><th>Giá</th><th>Hiệu lực từ</th></tr></thead>
         <tbody>
+        @if (Model.Count == 0)
+        {
+            <tr><td colspan="5" style="text-align:center;color:#8a94a3;padding:24px;">Không có mức giá nào khớp.</td></tr>
+        }
         @foreach (var f in Model)
         {
             <tr>

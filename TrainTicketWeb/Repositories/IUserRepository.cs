@@ -12,7 +12,7 @@ public interface IUserRepository
     void Insert(User user);
     void UpdatePassword(int userId, string passwordHash);
     void UpdateProfile(int userId, string fullName, string phone);
-    List<User> GetAll();
+    List<User> GetAll(string keyword = null);
     void SetStatus(int userId, string status);
 }
 
@@ -40,8 +40,17 @@ public class UserRepository : IUserRepository
         => Db.Execute("UPDATE users SET full_name = @n, phone = @p WHERE user_id = @id",
             Db.P("@n", fullName.Trim()), Db.P("@p", (phone ?? "").Trim()), Db.P("@id", userId));
 
-    public List<User> GetAll()
-        => Db.Map<User>(Db.Query("SELECT * FROM users ORDER BY created_at DESC"));
+    public List<User> GetAll(string keyword = null)
+    {
+        if (string.IsNullOrWhiteSpace(keyword))
+            return Db.Map<User>(Db.Query("SELECT * FROM users ORDER BY created_at DESC"));
+
+        return Db.Map<User>(Db.Query(
+            @"SELECT * FROM users
+              WHERE full_name LIKE @kw OR email LIKE @kw OR ISNULL(phone,'') LIKE @kw
+              ORDER BY created_at DESC",
+            Db.P("@kw", "%" + keyword.Trim() + "%")));
+    }
 
     public void SetStatus(int userId, string status)
         => Db.Execute("UPDATE users SET [status]=@s WHERE user_id=@id",

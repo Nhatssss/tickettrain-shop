@@ -208,12 +208,145 @@ public class QuanTriController : Controller
         return RedirectToAction(nameof(Trips));
     }
 
-    // ===== Bảng giá =====
-    public IActionResult Fares()
+    // ===== Xuất CSV (Excel mo duoc, co BOM UTF-8 nen tieng Viet khong loi) =====
+    private FileContentResult CsvUtf8(string fileName, IEnumerable<string[]> rows)
     {
-        ViewBag.Stations = _stations.GetStations(activeOnly: true);
-        ViewBag.CoachTypes = _trains.GetCoachTypes();
-        return View(_schedules.GetFares());
+        var sb = new System.Text.StringBuilder();
+        foreach (var r in rows)
+            sb.AppendLine(string.Join(",", r.Select(c => CsvCell(c))));
+
+        var bom = new byte[] { 0xEF, 0xBB, 0xBF };
+        var body = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+        var data = new byte[bom.Length + body.Length];
+        Buffer.BlockCopy(bom, 0, data, 0, bom.Length);
+        Buffer.BlockCopy(body, 0, data, bom.Length, body.Length);
+        return File(data, "text/csv; charset=utf-8", fileName);
+    }
+
+    private static string CsvCell(string value)
+    {
+        var v = (value ?? "").Replace("\r", " ").Replace("\n", " ");
+        if (v.Contains(",") || v.Contains("\"") || v.Contains(";"))
+            v = "\"" + v.Replace("\"", "\"\"") + "\"";
+        return v;
+    }
+
+    public IActionResult ExportBookings(string status = null, string keyword = null)
+    {
+        var list = _bookings.GetAll(status, keyword);
+
+        var statusLabel = new Dictionary<string, string>
+        {
+            ["holding"] = "Đang giữ chỗ",
+            ["paid"] = "Đã thanh toán",
+            ["expired"] = "Hết hạn",
+            ["cancelled"] = "Da huy"
+        };
+
+        var rows = new List<string[]>
+        {
+            new[] { "Mã đơn", "Email", "Điện thoại", "Ngày đặt", "Tổng tiền", "Trạng thái" }
+        };
+        foreach (var b in list)
+        {
+            rows.Add(new[]
+            {
+                b.BookingCode,
+                b.ContactEmail ?? "",
+                b.ContactPhone ?? "",
+                b.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
+                b.TotalAmount.ToString("0"),
+                statusLabel.TryGetValue(b.Status ?? "", out var lb) ? lb : (b.Status ?? "")
+            });
+        }
+
+        return CsvUtf8($"don-hang-{DateTime.Now:yyyyMMdd-HHmm}.csv", rows);
+    }
+
+    public IActionResult ExportUsers(string keyword = null)
+    {
+        var list = _users.GetAll(keyword);
+        var rows = new List<string[]>
+        {
+            new[] { "Mã người dùng", "Họ tên", "Email", "Điện thoại", "Vai trò", "Trạng thái" }
+        };
+        foreach (var u in list)
+        {
+            rows.Add(new[]
+            {
+                u.UserId.ToString(),
+                u.FullName ?? "",
+                u.Email ?? "",
+                u.Phone ?? "",
+                u.Role ?? "",
+                u.Status ?? ""
+            });
+        }
+        return CsvUtf8($"nguoi-dung-{DateTime.Now:yyyyMMdd-HHmm}.csv", rows);
+    }
+
+    public IActionResult ExportFares(string keyword = null)
+    {
+        var stations = _stations.GetStations(activeOnly: true);
+        var coachTypes = _trains.GetCoachTypes();
+        var fares = _schedules.GetFares();
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var kw = keyword.Trim().ToLowerInvariant();
+            fares = fares.Where(f =>
+            {
+                var from = stations.FirstOrDefault(s => s.StationId == f.FromStationId)?.StationName ?? "";
+                var to = stations.FirstOrDefault(s => s.StationId == f.ToStationId)?.StationName ?? "";
+                var ct = coachTypes.FirstOrDefault(c => c.CoachTypeId == f.CoachTypeId)?.TypeName ?? "";
+                return from.ToLowerInvariant().Contains(kw)
+                    || to.ToLowerInvariant().Contains(kw)
+                    || ct.ToLowerInvariant().Contains(kw);
+            }).ToList();
+        }
+
+        var rows = new List<string[]>
+        {
+            new[] { "Ga đi", "Ga đến", "Loại toa", "Giá cơ bản", "Hiệu lực từ" }
+        };
+        foreach (var f in fares)
+        {
+            rows.Add(new[]
+            {
+                stations.FirstOrDefault(s => s.StationId == f.FromStationId)?.StationName ?? "",
+                stations.FirstOrDefault(s => s.StationId == f.ToStationId)?.StationName ?? "",
+                coachTypes.FirstOrDefault(c => c.CoachTypeId == f.CoachTypeId)?.TypeName ?? "",
+                f.BasePrice.ToString("0"),
+                f.EffectiveFrom.ToString("dd/MM/yyyy")
+            });
+        }
+        return CsvUtf8($"bang-gia-{DateTime.Now:yyyyMMdd-HHmm}.csv", rows);
+    }
+    // ===== Bảng giá =====
+    public IActionResult Fares(string keyword = null)
+    {
+        var stations = _stations.GetStations(activeOnly: true);
+        var coachTypes = _trains.GetCoachTypes();
+        ViewBag.Stations = stations;
+        ViewBag.CoachTypes = coachTypes;
+        ViewBag.Keyword = keyword ?? "";
+
+        var fares = _schedules.GetFares();
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var kw = keyword.Trim().ToLowerInvariant();
+            fares = fares.Where(f =>
+            {
+                var from = stations.FirstOrDefault(s => s.StationId == f.FromStationId)?.StationName ?? "";
+                var to = stations.FirstOrDefault(s => s.StationId == f.ToStationId)?.StationName ?? "";
+                var ct = coachTypes.FirstOrDefault(c => c.CoachTypeId == f.CoachTypeId)?.TypeName ?? "";
+                return from.ToLowerInvariant().Contains(kw)
+                    || to.ToLowerInvariant().Contains(kw)
+                    || ct.ToLowerInvariant().Contains(kw);
+            }).ToList();
+        }
+
+        return View(fares);
     }
 
     [HttpPost]
@@ -245,10 +378,11 @@ public class QuanTriController : Controller
     }
 
     // ===== Đơn hàng =====
-    public IActionResult Bookings(string status = null)
+    public IActionResult Bookings(string status = null, string keyword = null)
     {
-        ViewBag.Status = status;
-        return View(_bookings.GetAll(status));
+        ViewBag.Status = status ?? "";
+        ViewBag.Keyword = keyword ?? "";
+        return View(_bookings.GetAll(status, keyword));
     }
 
     public IActionResult BookingDetail(int bookingId)
@@ -272,15 +406,10 @@ public class QuanTriController : Controller
     }
 
     // ===== Người dùng =====
-    public IActionResult Users() => View(_users.GetAll());
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult SetUserStatus(int userId, string status)
+    public IActionResult Users(string keyword = null)
     {
-        _users.SetStatus(userId, status);
-        TempData["Success"] = "Đã cập nhật trạng thái người dùng.";
-        return RedirectToAction(nameof(Users));
+        ViewBag.Keyword = keyword ?? "";
+        return View(_users.GetAll(keyword));
     }
 
     // ===== Quản lý mã giảm giá =====
